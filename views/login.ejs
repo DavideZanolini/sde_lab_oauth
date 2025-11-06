@@ -1,16 +1,65 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body>
-    <h1>Login</h1>
-    <p>
-      <a href="/auth/google">Sign in with Google</a>
-    </p>
-    <p>
-      <a href="/">Back to home</a>
-    </p>
+
+  <body class="min-h-screen bg-blue-900 text-gray-800 flex flex-col">
+    <header class="border-b bg-white shadow-sm">
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+          <a class="flex items-center gap-2" href="/">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" 
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+              class="w-6 h-6 text-blue-800">
+              <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1
+              c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+            </svg>
+            <span class="font-semibold text-lg text-gray-800">Auth Lab</span>
+          </a>
+
+          <nav class="flex items-center gap-6">
+            <a href="/" class="text-sm text-gray-500 hover:text-gray-900 transition">Home</a>
+            <% if (!user) { %>
+              <a href="/login">
+                <button
+                  class="inline-flex items-center justify-center text-sm font-medium text-white bg-blue-800 hover:bg-blue-700 transition rounded-md px-3 py-1.5">
+                  Sign in
+                </button>
+              </a>
+            <% } else { %>
+              <a href="/redirect" class="text-sm text-gray-500 hover:text-gray-900 transition">Redirect</a>
+              <a href="/logout">
+                <button
+                  class="inline-flex items-center justify-center text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition rounded-md px-3 py-1.5">
+                  Logout
+                </button>
+              </a>
+            <% } %>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center px-4">
+      <div class="bg-white shadow-sm rounded-2xl p-8 w-full max-w-md text-center">
+        <h1 class="text-4xl font-bold mb-6 text-gray-800">Login</h1>
+
+        <a href="/auth/google"
+           class="inline-block px-5 py-2 bg-blue-800 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+          Sign in with Google
+        </a>
+
+        <div class="mt-4">
+          <a href="/" class="text-sm text-gray-500 hover:text-gray-900 transition">
+            ← Back to Home
+          </a>
+        </div>
+      </div>
+    </main>
   </body>
-  </html>
+</html>
