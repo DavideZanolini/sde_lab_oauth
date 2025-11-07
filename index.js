@@ -45,7 +45,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('login');
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    res.render('login', { user: req.user.profile });
+  } else {
+    res.render('login', { user: null });
+  }
 });
 
 // Start OAuth flow
@@ -71,9 +75,11 @@ app.get('/redirect', (req, res) => {
   }
 });
 
-app.get('/logout', (req, res) => {
-  req.logout?.();
-  req.session.destroy(()=> res.redirect('/'));
+app.get('/logout', (req, res, next) => {
+  req.logout(err => {
+    if (err) return next(err);
+    req.session.destroy(() => res.redirect('/'));
+  });
 });
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
