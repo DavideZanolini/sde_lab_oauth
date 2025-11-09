@@ -50,10 +50,27 @@
         <h1 class="text-5xl font-bold mb-6 text-foreground text-gray-800">Home</h1>
 
         <% if (user) { %>
-          <p class="mb-2">Signed in as <span class="font-medium"><%= user.displayName %></span></p>
-          <a href="/redirect" class="text-sm text-gray-500 hover:text-gray-900 transition">
-            Go to Redirect Page →
-          </a>
+          <div class="flex flex-col items-center space-y-3 mb-4">
+            <img
+            src="<%= user.photos && user.photos[0] && user.photos[0].value %>"
+            alt="avatar"
+            width="64"
+            height="64"
+            class="rounded-full shadow-sm border border-gray-200"
+            referrerpolicy="no-referrer"
+            />
+            <p>Signed in as <span class="font-medium"><%= user.displayName %></span></p>
+            <p>Email: <span class="font-medium"><%= (user.emails && user.emails[0] && user.emails[0].value) || 'N/A' %></span></p>
+            <a href="/redirect" class="text-sm text-gray-500 hover:text-gray-900 transition">
+                Go to Redirect Page →
+            </a>
+            <a href="/calendar" class="text-sm text-gray-500 hover:text-gray-900 transition">
+                View Calendar →
+            </a>
+            <a href="/refresh" class="text-sm text-gray-500 hover:text-gray-900 transition">
+                Refresh Token →
+            </a>
+        </div>
         <% } else { %>
           <p class="mb-4">You are not signed in.</p>
           <a href="/login"

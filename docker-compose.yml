@@ -5,10 +5,13 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
+      - NODE_ENV=development
       - SESSION_SECRET=${SESSION_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - CHOKIDAR_USEPOLLING=1 # helps nodemon detect file changes
     volumes:
       - ./:/app
       - /app/node_modules
+    command: npm run dev

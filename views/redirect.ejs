@@ -50,8 +50,8 @@
         <h1 class="text-4xl font-bold mb-6 text-gray-800">Redirect Page</h1>
 
         <% if (user) { %>
-          <p>Welcome, <span class="font-medium"><%= user.displayName %></span></p>
-          <p class="mb-6 ">Email: <%= (user.emails && user.emails[0] && user.emails[0].value) || 'N/A' %></p>
+          <p>Welcome, your id is <span class="font-medium"><%= user.id %></span></p>
+          <br>
           <p>Your refresh token is </p>
           <p class="mb-6"><code  class="font-medium"><%= refreshToken ? refreshToken.slice(0, 16) + '******' : 'N/A' %></code></p>
           <p>Your access token is </p>
