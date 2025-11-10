@@ -1,3 +1,4 @@
+// === Initialization of the modules required for this exercise ===
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
@@ -5,6 +6,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const path = require('path');
 
+// === Setup of Express app, enable session manager and initialize Passport ===
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -19,7 +21,8 @@ app.use(passport.session());
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
-// Comment out this strategy if you want to implement the OAuth flow manually
+// === Google OAuth2 Strategy configuration: with Passport we can define the strategy for authenticating with Google ===
+//    Note: Comment out this strategy if you want to implement the OAuth flow manually
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -27,16 +30,17 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     callbackURL: process.env.GOOGLE_CALLBACK_URL || `http://localhost:${PORT}/auth/google/callback`
   },
   (accessToken, refreshToken, profile, cb) => {
-    // For this demo we just pass the profile through
     return cb(null, { accessToken, refreshToken, profile});
   }));
 }
 
+// === Middleware for avoid surf in potected routes if the user is not authenticated ===
 function ensureAuth(req, res, next) {
   if (req.isAuthenticated && req.isAuthenticated()) return next();
   res.redirect('/login');
 }
 
+// === Index route: Render the home page ===
 app.get('/', (req, res) => {
   if (req.isAuthenticated && req.isAuthenticated()) {
     res.render('index', { user: req.user.profile });
@@ -45,6 +49,7 @@ app.get('/', (req, res) => {
   }
 });
 
+// === Login route: Render the login page ===
 app.get('/login', (req, res) => {
   if (req.isAuthenticated && req.isAuthenticated()) {
     res.render('login', { user: req.user.profile });
@@ -53,8 +58,18 @@ app.get('/login', (req, res) => {
   }
 });
 
-// Start OAuth flow
-// Exercise 1 here: Change the scope in order to print all the requested information in the home page
+// === Logut route: Close user session ===
+app.get('/logout', (req, res, next) => {
+  req.logout(err => {
+    if (err) return next(err);
+    req.session.destroy(() => res.redirect('/'));
+  });
+});
+
+// === OAuth route: Start OAuth flow ===
+/* EXERCISE 1 HERE: 
+*   Change the scope in order to print all the requested information in the home page
+*/
 app.get('/auth/google', (req, res, next) => {
   if (!passport._strategy('google')) return res.status(500).send('Google OAuth not configured');
   passport.authenticate('google', {
@@ -64,7 +79,7 @@ app.get('/auth/google', (req, res, next) => {
   })(req, res, next);
 });
 
-// OAuth callback / redirect page
+// === OAuth callback route: Handles Google's response ===
 app.get('/auth/google/callback', (req, res, next) => {
   if (!passport._strategy('google')) return res.status(500).send('Google OAuth not configured');
   passport.authenticate('google', { failureRedirect: '/login' })(req, res, () => {
@@ -72,37 +87,28 @@ app.get('/auth/google/callback', (req, res, next) => {
   });
 });
 
-app.get('/redirect', (req, res) => {
-  // This page shows a minimal confirmation after redirect
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    res.render('redirect', {
-      user: req.user.profile,
-      refreshToken: req.user.refreshToken,
-      accessToken: req.user.accessToken,
-    });
-  } else {
-    res.redirect('/login');
-  }
-});
-
-app.get('/logout', (req, res, next) => {
-  req.logout(err => {
-    if (err) return next(err);
-    req.session.destroy(() => res.redirect('/'));
+// === Redirect route: Render the dashboard page with minimal information receviced from Google ===
+app.get('/redirect', ensureAuth, (req, res) => {
+  res.render('redirect', {
+    user: req.user.profile,
+    refreshToken: req.user.refreshToken,
+    accessToken: req.user.accessToken,
   });
 });
 
+// === Calendar route: Render calendar page ===
 app.get("/calendar", ensureAuth, async (req, res) => {
 	console.log("Fetching calendar events for user:", req.user);
 
 	let events = [];
 	let error = null;
 
-	// Exercise 2 here:
-	// Use the Google Calendar API to fetch the next 5 upcoming events from the user's primary calendar
-	// The url to fetch is: 'https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=5'
-    // Note: you need to change the scope in the /auth/google route to request calendar access:
-    // "https://www.googleapis.com/auth/calendar.readonly"
+	/* EXERCISE 2 HERE:
+	*   Use the Google Calendar API to fetch the next 5 upcoming events from the user's primary calendar
+	*   The url to fetch is: 'https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=5'
+  *       Note: you need to change the scope in the /auth/google route to request calendar access:
+  *       "https://www.googleapis.com/auth/calendar.readonly"
+  */
 	try {
         // ------------- Your code here -------------
 		const r = await fetch(
@@ -136,69 +142,76 @@ app.get("/calendar", ensureAuth, async (req, res) => {
 	});
 });
 
-// Assignment here: Complete the request to obtain a new access token
+/* ASSIGNMENT HERE:
+*   Complete the request to obtain a new access token
+*/
 app.get("/refresh", ensureAuth, async (req, res) => {
-    if (!req.user.refreshToken) {
-        return res.status(500).render('refresh', {
-            user: req.user,
-            ok: false,
-            oldAccessToken: '(unknown)',
-            newAccessToken: null,
-            payload: { error: "No refresh token available" }
-        });
+  // Check if the refresh token is available
+  if (!req.user.refreshToken) {
+      return res.status(500).render('refresh', {
+          user: req.user,
+          ok: false,
+          oldAccessToken: '(unknown)',
+          newAccessToken: null,
+          payload: { error: "No refresh token available" }
+      });
+  }
+  try {
+      // Define the body of the request
+      // ------------- Your code here -------------
+      body = new URLSearchParams({
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          grant_type: "refresh_token",
+          refresh_token: req.user.refreshToken,
+      })
+      // ---------------------------------------------
+      // Executes the request to Google and waits for the response
+      const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body
+      });
 
-    }
-    try {
-        // ------------- Your code here -------------
-        body = new URLSearchParams({
-            client_id: process.env.GOOGLE_CLIENT_ID,
-            client_secret: process.env.GOOGLE_CLIENT_SECRET,
-            grant_type: "refresh_token",
-            refresh_token: req.user.refreshToken,
-        })
-        // ---------------------------------------------
-        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: body
-        });
+      // Storage the response
+      const payload = await tokenRes.json();
+      console.log("Refresh token response:", payload);
 
-        const payload = await tokenRes.json();
-        console.log("Refresh token response:", payload);
+      // Check if the operation was unsuccessful
+      if (!tokenRes.ok) {
+          return res.status(tokenRes.status).render('refresh', {
+              user: req.user,
+              ok: false,
+              oldAccessToken: req.user.accessToken || '(none)',
+              newAccessToken: null,
+              payload
+          });
+      }
 
-        if (!tokenRes.ok) {
-            return res.status(tokenRes.status).render('refresh', {
-                user: req.user,
-                ok: false,
-                oldAccessToken: req.user.accessToken || '(none)',
-                newAccessToken: null,
-                payload
-            });
-        }
+      // Update the user's access token in the session
+      const newAccessToken = payload.access_token;
 
-        const newAccessToken = payload.access_token;
-        // Update the user's access token in the session
+      let oldAccessToken = req.user.accessToken;
+      req.user.accessToken = newAccessToken;
 
-        let oldAccessToken = req.user.accessToken;
-        req.user.accessToken = newAccessToken;
-
-        return res.render('refresh', {
-            user: req.user,
-            ok: true,
-            oldAccessToken: oldAccessToken,
-            newAccessToken,
-            payload
-        });
-    } catch (error) {
-        console.error("Error refreshing access token:", error);
-        return res.status(500).render('refresh', {
-            user: req.user,
-            ok: false,
-            oldAccessToken: '(unknown)',
-            newAccessToken: null,
-            payload: { error: error.message || String(error) }
-        });
-    }
+      // Render the page with information of the successful operation
+      return res.render('refresh', {
+          user: req.user,
+          ok: true,
+          oldAccessToken: oldAccessToken,
+          newAccessToken,
+          payload
+      });
+  } catch (error) {
+      console.error("Error refreshing access token:", error);
+      return res.status(500).render('refresh', {
+          user: req.user,
+          ok: false,
+          oldAccessToken: '(unknown)',
+          newAccessToken: null,
+          payload: { error: error.message || String(error) }
+      });
+  }
 });
 
 /* Here is an alternative implementation of the OAuth flow using Passport only for storing the session
@@ -307,5 +320,5 @@ app.get("/auth/google/callback", async (req, res, next) => {
 });
 */
 
-
+// === Starting of the server ===
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
