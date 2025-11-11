@@ -59,7 +59,7 @@
             class="rounded-full shadow-sm border border-gray-200"
             referrerpolicy="no-referrer"
             />
-            <p>Signed in as <span class="font-medium"><%= user.displayName %></span></p>
+            <p>Signed in as <span class="font-medium"><%= user.displayName || 'N/A' %></span></p>
             <p>Email: <span class="font-medium"><%= (user.emails && user.emails[0] && user.emails[0].value) || 'N/A' %></span></p>
             <a href="/redirect" class="text-sm text-gray-500 hover:text-gray-900 transition">
                 Go to Redirect Page →
