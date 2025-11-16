@@ -85,7 +85,7 @@ app.get('/auth/google', (req, res, next) => {
   passport.authenticate('google', {
     accessType: 'offline',
     prompt: 'consent',
-    scope: ['openid'] 
+    scope: ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/calendar.readonly']
   })(req, res, next);
 });
 
