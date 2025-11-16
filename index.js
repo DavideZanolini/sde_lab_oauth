@@ -21,7 +21,11 @@ app.use(passport.session());
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
-// === Google OAuth2 Strategy configuration: with Passport we can define the strategy for authenticating with Google ===
+/**
+ * === Google OAuth2 Strategy configuration: with Passport we can define the strategy for authenticating with Google ===
+ * Passport is a plug-in authentication system for Node.js. It doesn’t handle login screens or sessions by itself — instead, it provides a clean, modular way to add any kind of authentication to your app.
+ * You can attach different strategies depending on what you want, and in this case we are using the Google OAuth2 strategy.
+*/
 //    Note: Comment out this strategy if you want to implement the OAuth flow manually
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
@@ -66,20 +70,33 @@ app.get('/logout', (req, res, next) => {
   });
 });
 
-// === OAuth route: Start OAuth flow ===
-/* EXERCISE 1 HERE: 
-*   Change the scope in order to print all the requested information in the home page
-*/
+/**
+ * === OAuth route: Start OAuth flow ===
+ * Here we start the OAuth flow by redirecting the user to Google's OAuth 2.0 server.
+ * In particular, it is the second step of the Oauth 2.0 flow, where the client redirects the user to the Authorization Server.
+ * 
+ * 
+ * === Exercise here ===
+ * In this route, you need to change the scope parameter in order to print all the requested information in the home page.
+ * HINT: You can request multiple scopes by providing an array of strings.
+ */
 app.get('/auth/google', (req, res, next) => {
   if (!passport._strategy('google')) return res.status(500).send('Google OAuth not configured');
   passport.authenticate('google', {
     accessType: 'offline',
     prompt: 'consent',
-    scope: ['profile', 'email'] 
+    scope: ['openid'] 
   })(req, res, next);
 });
 
-// === OAuth callback route: Handles Google's response ===
+/**
+ * === OAuth callback route: Handles Google's response ===
+ * Here we handle the redirect back from Google's OAuth 2.0 server.
+ * This corresponds to Step 4 of the OAuth 2.0 flow, where our app receives the authorization code. Inside passport.authenticate, Passport then also performs Steps 5 and 6: 
+ * it exchanges the authorization code for access/refresh tokens and fetches the user's profile.
+ * 
+ * If you want to see a manual implementation of these steps (without using Passport's built-in handling), check the commented code at the bottom of this file.
+*/
 app.get('/auth/google/callback', (req, res, next) => {
   if (!passport._strategy('google')) return res.status(500).send('Google OAuth not configured');
   passport.authenticate('google', { failureRedirect: '/login' })(req, res, () => {
@@ -96,28 +113,32 @@ app.get('/redirect', ensureAuth, (req, res) => {
   });
 });
 
-// === Calendar route: Render calendar page ===
+/**
+ *  === Calendar route: Render calendar page ===
+ * Here we will fetch the next 5 upcoming events from the user's primary calendar using the Google Calendar API.
+ * 
+ * === Final Exercise here ===
+ * You need to complete the code to fetch with a GET request the events from the Google Calendar API.
+ * 
+ * HINT 1: the URL to fetch is: 'https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=5'
+ * HINT 2: you will need to include the access token in the Authorization header as a Bearer token.
+ * HINT 3: you need to change the scope in the /auth/google route to request calendar access.
+ */
 app.get("/calendar", ensureAuth, async (req, res) => {
 	console.log("Fetching calendar events for user:", req.user);
 
 	let events = [];
 	let error = null;
 
-	/* EXERCISE 2 HERE:
-	*   Use the Google Calendar API to fetch the next 5 upcoming events from the user's primary calendar
-	*   The url to fetch is: 'https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=5'
-  *       Note: you need to change the scope in the /auth/google route to request calendar access:
-  *       "https://www.googleapis.com/auth/calendar.readonly"
-  */
 	try {
-        // ------------- Your code here -------------
+        // ------------- Complete the code here ------------- //
 		const r = await fetch(
 			"https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=5",
 			{
 				headers: { Authorization: `Bearer ${req.user.accessToken}` },
 			}
 		);
-        // ---------------------------------------------
+        // -------------------------------------------------- //
 
 		console.log("Calendar API response status:", r.status);
 
@@ -145,6 +166,16 @@ app.get("/calendar", ensureAuth, async (req, res) => {
 /* ASSIGNMENT HERE:
 *   Complete the request to obtain a new access token
 */
+/**
+ * === Refresh route: Refresh the access token using the refresh token ===
+ * 
+ * === Assignment here ===
+ * You need to complete the code to request a new access token from Google's OAuth 2.0 server using the refresh token.
+ * To do so you need to complete the body of the POST request to include the missing parameters.
+ * 
+ * HINT: all the parameters needed are commented or empty, you just need to fill them with the correct values.
+ * HINT: check the errors to understand what Google expects.
+ */
 app.get("/refresh", ensureAuth, async (req, res) => {
   // Check if the refresh token is available
   if (!req.user.refreshToken) {
@@ -158,14 +189,16 @@ app.get("/refresh", ensureAuth, async (req, res) => {
   }
   try {
       // Define the body of the request
-      // ------------- Your code here -------------
+
+      // ------------- Complete the code here ------------- //
       body = new URLSearchParams({
           client_id: process.env.GOOGLE_CLIENT_ID,
           client_secret: process.env.GOOGLE_CLIENT_SECRET,
           grant_type: "refresh_token",
           refresh_token: req.user.refreshToken,
       })
-      // ---------------------------------------------
+      // -------------------------------------------------- //
+
       // Executes the request to Google and waits for the response
       const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
           method: "POST",
@@ -214,15 +247,17 @@ app.get("/refresh", ensureAuth, async (req, res) => {
   }
 });
 
-/* Here is an alternative implementation of the OAuth flow using Passport only for storing the session
-and not for handling the OAuth process itself.
-
+/**
+ * === Alternative manual OAuth flow implementation (without using Passport's built-in handling) ===
+ * We will use this code to illustrate the OAuth 2.0 flow steps manually, Passport is used here only for session management.
+ */
+/*
 // Helpers for CSRF protection
 function randomBase64Url(bytes = 32) {
 	return crypto.randomBytes(bytes).toString("base64url");
 }
 
-// Exercise 1 here: Change the scope in order to print all the requested information in the home page
+// OAuth route: Start OAuth flow
 app.get("/auth/google", (req, res, next) => {
 	const state = randomBase64Url(16);
 	req.session.oauthState = state;
