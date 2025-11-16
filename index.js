@@ -85,7 +85,7 @@ app.get('/auth/google', (req, res, next) => {
   passport.authenticate('google', {
     accessType: 'offline',
     prompt: 'consent',
-    scope: ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/calendar.readonly']
+    scope: ['openid']
   })(req, res, next);
 });
 
@@ -132,12 +132,7 @@ app.get("/calendar", ensureAuth, async (req, res) => {
 
 	try {
         // ------------- Complete the code here ------------- //
-		const r = await fetch(
-			"https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=5",
-			{
-				headers: { Authorization: `Bearer ${req.user.accessToken}` },
-			}
-		);
+		const r = await fetch();
         // -------------------------------------------------- //
 
 		console.log("Calendar API response status:", r.status);
@@ -192,10 +187,10 @@ app.get("/refresh", ensureAuth, async (req, res) => {
 
       // ------------- Complete the code here ------------- //
       body = new URLSearchParams({
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          grant_type: "refresh_token",
-          refresh_token: req.user.refreshToken,
+          // client_id: process.env.GOOGLE_CLIENT_ID,
+          // client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          grant_type: "",
+          // refresh_token: req.user.refreshToken,
       })
       // -------------------------------------------------- //
 
